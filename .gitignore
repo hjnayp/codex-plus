@@ -1,0 +1,8 @@
+node_modules/
+claude/hooks/hash-rules.mjs
+# codex+ update 生成的打包产物
+bin/codex+.mjs
+# 用户自己的缩写规则，首次 update 时从 hash-rules.example.toml 生成
+hash-rules.toml
+# 外层仓库的 build 忽略规则不适用于打包源码
+!/src/build/

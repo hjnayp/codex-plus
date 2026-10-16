@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CODEX_PLUS_ENTRY="${BASH_SOURCE[0]}"
+CODEX_PLUS_COMMAND_NAME="${CODEX_PLUS_COMMAND_NAME:-$(basename "$CODEX_PLUS_ENTRY")}"
+while [[ -L "$CODEX_PLUS_ENTRY" ]]; do
+  CODEX_PLUS_LINK_DIR="$(CDPATH= cd -- "$(dirname -- "$CODEX_PLUS_ENTRY")" && pwd -P)"
+  CODEX_PLUS_ENTRY="$(readlink "$CODEX_PLUS_ENTRY")"
+  [[ "$CODEX_PLUS_ENTRY" = /* ]] || CODEX_PLUS_ENTRY="$CODEX_PLUS_LINK_DIR/$CODEX_PLUS_ENTRY"
+done
+CODEX_PLUS_SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$CODEX_PLUS_ENTRY")" && pwd -P)"
+CODEX_PLUS_NODE="$(command -v node 2>/dev/null || true)"
+if [[ -z "$CODEX_PLUS_NODE" ]]; then
+  for CODEX_PLUS_NODE_CANDIDATE in /opt/homebrew/bin/node /usr/local/bin/node; do
+    if [[ -x "$CODEX_PLUS_NODE_CANDIDATE" ]]; then
+      CODEX_PLUS_NODE="$CODEX_PLUS_NODE_CANDIDATE"
+      break
+    fi
+  done
+fi
+if [[ -z "$CODEX_PLUS_NODE" ]]; then
+  echo "${CODEX_PLUS_COMMAND_NAME}: 找不到 Node.js（已检查 PATH、/opt/homebrew/bin/node、/usr/local/bin/node）" >&2
+  exit 127
+fi
+CODEX_PLUS_MAIN="$CODEX_PLUS_SCRIPT_DIR/codex+.mjs"
+if [[ ! -f "$CODEX_PLUS_MAIN" ]]; then
+  echo "${CODEX_PLUS_COMMAND_NAME}: 找不到打包产物 $CODEX_PLUS_MAIN" >&2
+  echo "${CODEX_PLUS_COMMAND_NAME}: 请在仓库根目录执行 node src/hosts/codex-desktop/main.ts update" >&2
+  exit 127
+fi
+CODEX_PLUS_COMMAND_NAME="$CODEX_PLUS_COMMAND_NAME" \
+  exec "$CODEX_PLUS_NODE" --no-warnings "$CODEX_PLUS_MAIN" "$@"

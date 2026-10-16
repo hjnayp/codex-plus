@@ -1,0 +1,117 @@
+.TH CODEX-PLUS 1 "2026-09-07" "codex+" "User Commands"
+.SH NAME
+codex+ \- 提供 Codex Desktop 本地界面增强
+.SH SYNOPSIS
+.B codex+
+.RI "{" launch | start | restart | stop | status | reload | update "}"
+.br
+.B codex+ gc
+.RB [ -t
+.IR 分钟 ]
+.RB [ --dry-run ]
+.br
+.B codex+
+.RI "{" --self-test | --man | man "}"
+.br
+.SH DESCRIPTION
+.B codex+
+以本机回环 CDP 启动官方 Codex Desktop（macOS ChatGPT.app），
+注入模型快捷键、待回答提醒与消息头像，不修改官方应用或回答正文。
+顶部额度百分比、TPS、回答 footer 和 token 使用统计已移除。
+Codex+ 不再读取 session JSONL 或维护用量账本；历史数据库保留，不读取或改写。
+.PP
+Ctrl+= 提升模型（Luna → Sol → Astra → Luna），Ctrl+- 降低模型（Astra → Sol → Luna → Astra）；只在 6 系三档中循环，保留思考强度与草稿。
+仅监听这两个快捷键，保留输入焦点，不发送内容；其他按键由原生界面处理。
+.PP
+提交 prompt 时，首段开头的 #l / #m / #h / #x 分别选择 low / medium / high / xhigh。
+也支持 #astra-l / #sol-h / #luna-x 等模型与强度组合：astra 为 gpt-6-astra，sol 为 gpt-6.1-sol，luna 为 gpt-6-luna；后缀支持 l / m / h / x。
+确认模型与强度生效后才移除前缀并发送正文，后续消息沿用所选设置。
+单指令 #astra / #sol / #luna 只切换模型，#l / #m / #h / #x 只切换强度，未指定项保持当前设置。
+支持 #sol #m 正文 等连续指令；重复指定同一项时以后面的指令为准。
+前缀须与正文以空白分隔，也可独占首段；切换指定模型与实际原生档位后移除指令并沿用原生发送流程。
+后续消息沿用所选模型与档位。切换失败保留草稿且不发送；改写草稿、切换对话或停用会取消尚未完成的提交。
+Codex+ 不筛选模型菜单，也不改写 Codex 的代理入口；启动时不检查上游代理，也不因其路由或配置变化重启 Codex。
+.PP
+Codex+ 不再禁用原生快捷键；启动或停止时恢复旧版本遗留的禁用项，并保留用户改键。
+update 只发布 Codex+ 本身，不读取、筛选或改写模型配置。
+.SH PARAMETERS
+.PP
+参数规则可定义 trigger = "#rvc1(ai=claude,module=opus)"，text 中使用 {ai}、{module}。
+#rvc1 使用默认值，#rvc1(module=fable) 具名覆盖，#rvc1(codex, sol) 按声明顺序传值。
+位置参数在具名参数之前；值可用单引号或双引号包围。支持向内层规则转发参数并递归展开。
+错误或未完成的调用保持原文且不高亮，不会仅替换名称。仅使用单个 #。
+.SH COMMANDS
+.TP
+.B launch
+App 使用的幂等入口；增强模式健康时复用实例并激活窗口。
+普通 Codex 已运行时自动切换 增强模式。
+.TP
+.B start
+启动或复用守护进程，不退出或重启 Codex。
+官方 Codex 已以普通模式运行时拒绝启动并提示 restart。
+.TP
+.B restart
+退出官方 Codex，再以 增强模式启动。
+.TP
+.B stop
+停止守护进程，移除界面增强与模型快捷键适配，
+并恢复未被用户改写的官方键位；不退出官方 Codex。
+.TP
+.B status
+显示守护进程、官方 Codex、本地 CDP、启动时间和日志路径。
+Codex+ 模式下再按本机 App Server 列出全部已加载对话（含前端不跟踪的子代理、预热的空白新对话、临时线程与已回收等待卸载的对话），
+标注等待审批或输入、进行中、查看中、闲置时长等状态和工作目录；其中闲置的对话与子代理可用 gc 回收。
+.TP
+.B gc \fR[\fB-t\fR \fI分钟\fR] [\fB--dry-run\fR]
+手动回收闲置满指定分钟（-t，默认 60）的对话：调用 Codex 官方闲置对话回收器取消订阅，
+App Server 随后卸载对话并结束其 MCP 等子进程；再次打开对话时正常恢复，不删除或归档对话。
+沿用官方保护：正在查看、有其他窗口跟随、进行中、等待审批或输入的对话不回收；
+另外跳过仍有后台终端或终端盘点失败的对话。官方默认闲置 3 小时自动回收，gc 不改变该策略。
+前端不跟踪的子代理也按同一阈值回收：子代理自身或父对话进行中、等待审批或输入时保留，否则取消订阅，
+App Server 约 1 分钟后卸载；预热的空白新对话与临时线程不回收。只处理本机，不处理云端与远程 SSH 主机。
+-t 0 回收所有不受保护的闲置对话；--dry-run 只列出将回收的对话。需要 Codex+ 模式；有对话回收失败时退出码为 1。
+.TP
+.B reload
+验证并重新读取 codex+ 目录下 hash-rules.toml 中的缩写规则，应用到当前窗口和后续加载页面，不重启 Codex。
+输入框实时高亮合法缩写，高亮不改变草稿。规则支持 TOML 注释。
+输入时不替换，发送或加入队列前递归展开已知完整 token；代码块、行内代码和未知 token 原样保留。
+规则无效时报告失败并保留旧规则。CODEX_PLUS_HASH_RULES_FILE 可在启动时指定规则文件路径。
+.TP
+.B update
+先把 src 下的模块和注入脚本打包成自包含的单文件产物 bin/codex+.mjs，
+同时把共用同一份缩写规则的 Claude Code 插件打包为 claude/hooks/hash-rules.mjs；
+hash-rules.toml 不存在时从 hash-rules.example.toml 生成，已有文件不覆盖。
+再把启动器链接到 ~/.local/bin，并把手册安装到 ~/.local/share/man/man1。
+启动器只执行该产物，因此未执行 update 的源码改动不会影响已安装的命令。
+同一份源码重复打包得到相同产物，命令会输出源码指纹；产物按同目录临时文件加原子 rename 替换，
+因此覆盖正在运行的产物是安全的。
+.SH ENVIRONMENT
+.TP
+.B CODEX_PLUS_CDP_PORT
+指定本机 CDP 优先端口。未设置时优先使用 57331；如端口被占用，codex+ 会自动选择一个可用的
+127.0.0.1 端口，并保存到 ~/.codex/codex+/cdp-port.json，供后续 start、status、stop 和 restart 使用。
+显式设置此变量时，冲突同样会自动替换为安全端口。
+.TP
+.B CODEX_PLUS_STARTUP_TIMEOUT_MS
+Codex 冷启动等待时间，默认 90000 毫秒。
+.TP
+.B CODEX_PLUS_STATE_DIR
+状态与日志目录，默认 ~/.codex/codex+。
+.TP
+.B CODEX_PLUS_CHATGPT_APP
+官方 ChatGPT.app 路径，默认 /Applications/ChatGPT.app。
+.TP
+.B CODEX_PLUS_INSTALL_PREFIX
+update 安装命令与手册的前缀，默认 ~/.local。
+.TP
+.B CODEX_PLUS_HASH_RULES_FILE
+# 缩写规则文件，默认为 codex+ 目录下的 hash-rules.toml。
+.SH EXAMPLES
+.nf
+codex+ update
+codex+ restart
+codex+ status
+codex+ gc --dry-run
+codex+ gc -t 30
+tail -f ~/.codex/codex+/daemon.log
+.fi

@@ -1,0 +1,34 @@
+# codex+ 的 # 缩写规则示例。首次运行 codex+ update 时复制为 hash-rules.toml，之后修改 hash-rules.toml 即可。
+# 每条 [[rules]] 的 trigger 是完整的 #缩写，text 是发送前替换成的内容。
+# text 中可以引用其他缩写，展开时会递归处理；修改后运行 codex+ reload 生效。
+# 行尾注释写在引号外；text 中位于引号内的 # 仍是替换内容。
+
+# 以 # 加下划线开头的缩写适合存放被其他规则引用的常量。
+[[rules]]
+trigger = "#_main-branch"
+text = "远端主分支"
+
+# Git
+[[rules]]
+trigger = "#gitnb"
+text = "在当前工作树，从#_main-branch创建新分支，注意不要把 upstream 设为#_main-branch。"
+
+[[rules]]
+trigger = "#gitrb"
+text = "将当前分支 rebase 到#_main-branch上，审慎处理冲突。"
+
+# 任务
+[[rules]]
+trigger = "#gofix"
+text = "根据问题说明和附件（如果有），先定位问题原因，再给出解决方案。"
+
+# 带参数的缩写：trigger 中声明默认值，text 中用 {参数名} 引用。
+# #review 使用默认值，#review(model=fable) 只覆盖 model，#review(codex, sol) 按声明顺序传值。
+[[rules]]
+trigger = "#review(ai=claude, model=opus)"
+text = "完成后将改动提交给 {ai} 审查，使用 {model}。"
+
+# 参数可以继续转发给内层缩写。
+[[rules]]
+trigger = "#fixandreview(ai=claude, model=opus)"
+text = "#gofix 确认方案后实施修复，#review(ai={ai}, model={model})"

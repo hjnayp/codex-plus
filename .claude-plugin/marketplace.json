@@ -1,0 +1,12 @@
+{
+  "name": "codex-plus",
+  "description": "Codex+ 的 Claude Code 本地插件",
+  "owner": { "name": "hjnayp" },
+  "plugins": [
+    {
+      "name": "hash-rules",
+      "description": "按 codex+ 的 hash-rules.toml 在发送前展开 # 缩写，并在输入框中着色",
+      "source": "./claude"
+    }
+  ]
+}

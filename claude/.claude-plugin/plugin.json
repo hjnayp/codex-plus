@@ -1,0 +1,6 @@
+{
+  "name": "hash-rules",
+  "version": "1.0.0",
+  "description": "按 codex+ 的 hash-rules.toml 在发送前展开 # 缩写，并在输入框中着色",
+  "author": { "name": "hjnayp" }
+}
